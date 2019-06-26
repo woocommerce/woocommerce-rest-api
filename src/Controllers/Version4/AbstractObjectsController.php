@@ -123,6 +123,15 @@ abstract class AbstractObjectsController extends AbstractController {
 
 		try {
 			$this->update_additional_fields_for_object( $object, $request );
+
+			/**
+			 * Fires after a single object is created or updated via the REST API.
+			 *
+			 * @param \WC_Data         $object    Inserted object.
+			 * @param \WP_REST_Request $request   Request object.
+			 * @param boolean         $creating  True when creating object, false when updating.
+			 */
+			do_action( "woocommerce_rest_insert_{$this->post_type}_object", $object, $request, true );
 		} catch ( \WC_Data_Exception $e ) {
 			$object->delete();
 			return new \WP_Error( $e->getErrorCode(), $e->getMessage(), $e->getErrorData() );
@@ -130,15 +139,6 @@ abstract class AbstractObjectsController extends AbstractController {
 			$object->delete();
 			return new \WP_Error( $e->getErrorCode(), $e->getMessage(), array( 'status' => $e->getCode() ) );
 		}
-
-		/**
-		 * Fires after a single object is created or updated via the REST API.
-		 *
-		 * @param \WC_Data         $object    Inserted object.
-		 * @param \WP_REST_Request $request   Request object.
-		 * @param boolean         $creating  True when creating object, false when updating.
-		 */
-		do_action( "woocommerce_rest_insert_{$this->post_type}_object", $object, $request, true );
 
 		$request->set_param( 'context', 'edit' );
 		$response = $this->prepare_item_for_response( $object, $request );
@@ -170,20 +170,20 @@ abstract class AbstractObjectsController extends AbstractController {
 
 		try {
 			$this->update_additional_fields_for_object( $object, $request );
+
+			/**
+			 * Fires after a single object is created or updated via the REST API.
+			 *
+			 * @param \WC_Data         $object    Inserted object.
+			 * @param \WP_REST_Request $request   Request object.
+			 * @param boolean         $creating  True when creating object, false when updating.
+			 */
+			do_action( "woocommerce_rest_insert_{$this->post_type}_object", $object, $request, false );
 		} catch ( \WC_Data_Exception $e ) {
 			return new \WP_Error( $e->getErrorCode(), $e->getMessage(), $e->getErrorData() );
 		} catch ( \WC_REST_Exception $e ) {
 			return new \WP_Error( $e->getErrorCode(), $e->getMessage(), array( 'status' => $e->getCode() ) );
 		}
-
-		/**
-		 * Fires after a single object is created or updated via the REST API.
-		 *
-		 * @param \WC_Data         $object    Inserted object.
-		 * @param \WP_REST_Request $request   Request object.
-		 * @param boolean         $creating  True when creating object, false when updating.
-		 */
-		do_action( "woocommerce_rest_insert_{$this->post_type}_object", $object, $request, false );
 
 		$request->set_param( 'context', 'edit' );
 		$response = $this->prepare_item_for_response( $object, $request );
