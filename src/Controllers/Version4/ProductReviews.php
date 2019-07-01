@@ -255,114 +255,85 @@ class ProductReviews extends AbstractController {
 	 * @return \WP_Error|\WP_REST_Response
 	 */
 	public function create_item( $request ) {
-		if ( ! empty( $request['id'] ) ) {
-			return new \WP_Error( 'woocommerce_rest_review_exists', __( 'Cannot create existing product review.', 'woocommerce-rest-api' ), array( 'status' => 400 ) );
-		}
-
-		$product_id = (int) $request['product_id'];
-
-		if ( 'product' !== get_post_type( $product_id ) ) {
-			return new \WP_Error( 'woocommerce_rest_product_invalid_id', __( 'Invalid product ID.', 'woocommerce-rest-api' ), array( 'status' => 404 ) );
-		}
-
-		$prepared_review = $this->prepare_item_for_database( $request );
-		if ( is_wp_error( $prepared_review ) ) {
-			return $prepared_review;
-		}
-
-		$prepared_review['comment_type'] = 'review';
-
-		/*
-		 * Do not allow a comment to be created with missing or empty comment_content. See wp_handle_comment_submission().
-		 */
-		if ( empty( $prepared_review['comment_content'] ) ) {
-			return new \WP_Error( 'woocommerce_rest_review_content_invalid', __( 'Invalid review content.', 'woocommerce-rest-api' ), array( 'status' => 400 ) );
-		}
-
-		// Setting remaining values before wp_insert_comment so we can use wp_allow_comment().
-		if ( ! isset( $prepared_review['comment_date_gmt'] ) ) {
-			$prepared_review['comment_date_gmt'] = current_time( 'mysql', true );
-		}
-
-		if ( ! empty( $_SERVER['REMOTE_ADDR'] ) && rest_is_ip_address( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) ) { // WPCS: input var ok, sanitization ok.
-			$prepared_review['comment_author_IP'] = wc_clean( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ); // WPCS: input var ok.
-		} else {
-			$prepared_review['comment_author_IP'] = '127.0.0.1';
-		}
-
-		if ( ! empty( $request['author_user_agent'] ) ) {
-			$prepared_review['comment_agent'] = $request['author_user_agent'];
-		} elseif ( $request->get_header( 'user_agent' ) ) {
-			$prepared_review['comment_agent'] = $request->get_header( 'user_agent' );
-		} else {
-			$prepared_review['comment_agent'] = '';
-		}
-
-		$check_comment_lengths = wp_check_comment_data_max_lengths( $prepared_review );
-		if ( is_wp_error( $check_comment_lengths ) ) {
-			$error_code = str_replace( array( 'comment_author', 'comment_content' ), array( 'reviewer', 'review_content' ), $check_comment_lengths->get_error_code() );
-			return new \WP_Error( 'woocommerce_rest_' . $error_code, __( 'Product review field exceeds maximum length allowed.', 'woocommerce-rest-api' ), array( 'status' => 400 ) );
-		}
-
-		$prepared_review['comment_parent']     = 0;
-		$prepared_review['comment_author_url'] = '';
-		$prepared_review['comment_approved']   = wp_allow_comment( $prepared_review, true );
-
-		if ( is_wp_error( $prepared_review['comment_approved'] ) ) {
-			$error_code    = $prepared_review['comment_approved']->get_error_code();
-			$error_message = $prepared_review['comment_approved']->get_error_message();
-
-			if ( 'comment_duplicate' === $error_code ) {
-				return new \WP_Error( 'woocommerce_rest_' . $error_code, $error_message, array( 'status' => 409 ) );
+		try {
+			if ( ! empty( $request['id'] ) ) {
+				return new \WP_Error( 'woocommerce_rest_review_exists', __( 'Cannot create existing product review.', 'woocommerce-rest-api' ), array( 'status' => 400 ) );
 			}
 
-			if ( 'comment_flood' === $error_code ) {
-				return new \WP_Error( 'woocommerce_rest_' . $error_code, $error_message, array( 'status' => 400 ) );
+			$prepared_review = wp_parse_args(
+				$this->prepare_item_for_database( $request ),
+				array(
+					'comment_post_ID'    => 0,
+					'comment_parent'     => 0,
+					'comment_author_url' => '',
+					'comment_date_gmt'   => current_time( 'mysql', true ),
+					'comment_author_IP'  => $this->get_comment_author_ip(),
+					'comment_agent'      => $this->get_comment_agent( $request ),
+				)
+			);
+
+			/**
+			 * Filters a review after it is prepared for the database.
+			 *
+			 * Allows modification of the review right after it is prepared for the database.
+			 *
+			 * @since 3.5.0
+			 * @param array           $prepared_review The prepared review data for `wp_insert_comment`.
+			 * @param \WP_REST_Request $request         The current request.
+			 */
+			$prepared_review = apply_filters( 'woocommerce_rest_preprocess_product_review', $prepared_review, $request );
+
+			if ( is_wp_error( $prepared_review ) ) {
+				return $prepared_review;
 			}
 
-			return $prepared_review['comment_approved'];
+			$prepared_review = $this->validate_review( $prepared_review, true );
+
+			/**
+			 * Filters a review before it is inserted via the REST API.
+			 *
+			 * Allows modification of the review right before it is inserted via wp_insert_comment().
+			 * Returning a \WP_Error value from the filter will shortcircuit insertion and allow
+			 * skipping further processing.
+			 *
+			 * @since 3.5.0
+			 * @param array|\WP_Error  $prepared_review The prepared review data for wp_insert_comment().
+			 * @param \WP_REST_Request $request          Request used to insert the review.
+			 */
+			$prepared_review = apply_filters( 'woocommerce_rest_pre_insert_product_review', $prepared_review, $request );
+
+			if ( is_wp_error( $prepared_review ) ) {
+				return $prepared_review;
+			}
+
+			$review_id = wp_insert_comment( wp_filter_comment( wp_slash( $prepared_review ) ) );
+
+			if ( ! $review_id ) {
+				throw new \WC_REST_Exception( 'woocommerce_rest_review_failed_create', __( 'Creating product review failed.', 'woocommerce-rest-api' ), 500 );
+			}
+
+			if ( isset( $request['status'] ) ) {
+				$this->handle_status_param( $request['status'], $review_id );
+			}
+
+			update_comment_meta( $review_id, 'rating', ! empty( $request['rating'] ) ? $request['rating'] : '0' );
+		} catch ( \WC_REST_Exception $e ) {
+			return new \WP_Error( $e->getErrorCode(), $e->getMessage(), array( 'status' => $e->getCode() ) );
 		}
-
-		/**
-		 * Filters a review before it is inserted via the REST API.
-		 *
-		 * Allows modification of the review right before it is inserted via wp_insert_comment().
-		 * Returning a \WP_Error value from the filter will shortcircuit insertion and allow
-		 * skipping further processing.
-		 *
-		 * @since 3.5.0
-		 * @param array|\WP_Error  $prepared_review The prepared review data for wp_insert_comment().
-		 * @param \WP_REST_Request $request          Request used to insert the review.
-		 */
-		$prepared_review = apply_filters( 'woocommerce_rest_pre_insert_product_review', $prepared_review, $request );
-		if ( is_wp_error( $prepared_review ) ) {
-			return $prepared_review;
-		}
-
-		$review_id = wp_insert_comment( wp_filter_comment( wp_slash( (array) $prepared_review ) ) );
-
-		if ( ! $review_id ) {
-			return new \WP_Error( 'woocommerce_rest_review_failed_create', __( 'Creating product review failed.', 'woocommerce-rest-api' ), array( 'status' => 500 ) );
-		}
-
-		if ( isset( $request['status'] ) ) {
-			$this->handle_status_param( $request['status'], $review_id );
-		}
-
-		update_comment_meta( $review_id, 'rating', ! empty( $request['rating'] ) ? $request['rating'] : '0' );
 
 		$review = get_comment( $review_id );
 
 		/**
 		 * Fires after a comment is created or updated via the REST API.
 		 *
-		 * @param WP_Comment      $review   Inserted or updated comment object.
+		 * @param \WP_Comment      $review   Inserted or updated comment object.
 		 * @param \WP_REST_Request $request  Request object.
 		 * @param bool            $creating True when creating a comment, false when updating.
 		 */
 		do_action( 'woocommerce_rest_insert_product_review', $review, $request, true );
 
 		$fields_update = $this->update_additional_fields_for_object( $review, $request );
+
 		if ( is_wp_error( $fields_update ) ) {
 			return $fields_update;
 		}
@@ -376,6 +347,94 @@ class ProductReviews extends AbstractController {
 		$response->header( 'Location', rest_url( sprintf( '%s/%s/%d', $this->namespace, $this->rest_base, $review_id ) ) );
 
 		return $response;
+	}
+
+	/**
+	 * Validate a review and throw an error if invalid.
+	 *
+	 * @throws \WC_REST_Exception Exception when a comment is not approved.
+	 * @param  array $prepared_review Review content.
+	 * @param  bool  $creating True when creating a review.
+	 * @return array
+	 */
+	protected function validate_review( $prepared_review, $creating = false ) {
+		if ( empty( $prepared_review['comment_content'] ) ) {
+			throw new \WC_REST_Exception( 'woocommerce_rest_review_content_invalid', __( 'Invalid review content.', 'woocommerce-rest-api' ), 400 );
+		}
+
+		if ( ! empty( $prepared_review['comment_post_ID'] ) ) {
+			if ( 'product' !== get_post_type( $prepared_review['comment_post_ID'] ) ) {
+				throw new \WC_REST_Exception( 'woocommerce_rest_product_invalid_id', __( 'Invalid product ID.', 'woocommerce-rest-api' ), 404 );
+			}
+		}
+
+		$check_comment_lengths = wp_check_comment_data_max_lengths( $prepared_review );
+
+		if ( is_wp_error( $check_comment_lengths ) ) {
+			$error_code = str_replace( array( 'comment_author', 'comment_content' ), array( 'reviewer', 'review_content' ), $check_comment_lengths->get_error_code() );
+			throw new \WC_REST_Exception( 'woocommerce_rest_' . $error_code, __( 'Product review field exceeds maximum length allowed.', 'woocommerce-rest-api' ), 400 );
+		}
+
+		if ( $creating ) {
+			$prepared_review['comment_approved'] = $this->get_comment_approved( $prepared_review );
+		}
+
+		return $prepared_review;
+	}
+
+	/**
+	 * Get comment user agent.
+	 *
+	 * @return string
+	 */
+	protected function get_comment_author_ip() {
+		if ( ! empty( $_SERVER['REMOTE_ADDR'] ) && rest_is_ip_address( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) ) { // WPCS: input var ok, sanitization ok.
+			return wc_clean( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ); // WPCS: input var ok.
+		} else {
+			return '127.0.0.1';
+		}
+	}
+
+	/**
+	 * Get comment user agent from request.
+	 *
+	 * @param \WP_REST_Request $request Full details about the request.
+	 * @return string
+	 */
+	protected function get_comment_agent( $request ) {
+		if ( ! empty( $request['author_user_agent'] ) ) {
+			return $request['author_user_agent'];
+		} elseif ( $request->get_header( 'user_agent' ) ) {
+			return $request->get_header( 'user_agent' );
+		} else {
+			return '';
+		}
+	}
+
+	/**
+	 * Attempt to approve an unsaved comment or throw an error.
+	 *
+	 * @throws \WC_REST_Exception Exception when a comment is not approved.
+	 * @param  array $prepared_review Review content.
+	 * @return int|string
+	 */
+	protected function get_comment_approved( $prepared_review ) {
+		$comment_approved = wp_allow_comment( $prepared_review, true );
+
+		if ( is_wp_error( $comment_approved ) ) {
+			$error_code    = $comment_approved->get_error_code();
+			$error_message = $comment_approved->get_error_message();
+
+			if ( 'comment_duplicate' === $error_code ) {
+				throw new \WC_REST_Exception( 'woocommerce_rest_' . $error_code, $error_message, 409 );
+			}
+
+			if ( 'comment_flood' === $error_code ) {
+				throw new \WC_REST_Exception( 'woocommerce_rest_' . $error_code, $error_message, 400 );
+			}
+		}
+
+		return $comment_approved;
 	}
 
 	/**
@@ -400,70 +459,60 @@ class ProductReviews extends AbstractController {
 	 * @return \WP_Error|\WP_REST_Response Response object on success, or error object on failure.
 	 */
 	public function update_item( $request ) {
-		$review = $this->get_review( $request['id'] );
-		if ( is_wp_error( $review ) ) {
-			return $review;
-		}
+		try {
+			$review = $this->get_review( $request['id'] );
 
-		$id = (int) $review->comment_ID;
-
-		if ( isset( $request['type'] ) && 'review' !== get_comment_type( $id ) ) {
-			return new \WP_Error( 'woocommerce_rest_review_invalid_type', __( 'Sorry, you are not allowed to change the comment type.', 'woocommerce-rest-api' ), array( 'status' => 404 ) );
-		}
-
-		$prepared_args = $this->prepare_item_for_database( $request );
-		if ( is_wp_error( $prepared_args ) ) {
-			return $prepared_args;
-		}
-
-		if ( ! empty( $prepared_args['comment_post_ID'] ) ) {
-			if ( 'product' !== get_post_type( (int) $prepared_args['comment_post_ID'] ) ) {
-				return new \WP_Error( 'woocommerce_rest_product_invalid_id', __( 'Invalid product ID.', 'woocommerce-rest-api' ), array( 'status' => 404 ) );
-			}
-		}
-
-		if ( empty( $prepared_args ) && isset( $request['status'] ) ) {
-			// Only the comment status is being changed.
-			$change = $this->handle_status_param( $request['status'], $id );
-
-			if ( ! $change ) {
-				return new \WP_Error( 'woocommerce_rest_review_failed_edit', __( 'Updating review status failed.', 'woocommerce-rest-api' ), array( 'status' => 500 ) );
-			}
-		} elseif ( ! empty( $prepared_args ) ) {
-			if ( is_wp_error( $prepared_args ) ) {
-				return $prepared_args;
+			if ( is_wp_error( $review ) ) {
+				return $review;
 			}
 
-			if ( isset( $prepared_args['comment_content'] ) && empty( $prepared_args['comment_content'] ) ) {
-				return new \WP_Error( 'woocommerce_rest_review_content_invalid', __( 'Invalid review content.', 'woocommerce-rest-api' ), array( 'status' => 400 ) );
+			$review_id = (int) $review->comment_ID;
+
+			if ( isset( $request['type'] ) && 'review' !== get_comment_type( $review_id ) ) {
+				return new \WP_Error( 'woocommerce_rest_review_invalid_type', __( 'Sorry, you are not allowed to change the comment type.', 'woocommerce-rest-api' ), array( 'status' => 404 ) );
 			}
 
-			$prepared_args['comment_ID'] = $id;
+			$prepared_review = $this->prepare_item_for_database( $request );
 
-			$check_comment_lengths = wp_check_comment_data_max_lengths( $prepared_args );
-			if ( is_wp_error( $check_comment_lengths ) ) {
-				$error_code = str_replace( array( 'comment_author', 'comment_content' ), array( 'reviewer', 'review_content' ), $check_comment_lengths->get_error_code() );
-				return new \WP_Error( 'woocommerce_rest_' . $error_code, __( 'Product review field exceeds maximum length allowed.', 'woocommerce-rest-api' ), array( 'status' => 400 ) );
+			/**
+			 * Filters a review after it is prepared for the database.
+			 *
+			 * Allows modification of the review right after it is prepared for the database.
+			 *
+			 * @since 3.5.0
+			 * @param array           $prepared_review The prepared review data for `wp_insert_comment`.
+			 * @param \WP_REST_Request $request         The current request.
+			 */
+			$prepared_review = apply_filters( 'woocommerce_rest_preprocess_product_review', $prepared_review, $request );
+
+			if ( is_wp_error( $prepared_review ) ) {
+				return $prepared_review;
 			}
 
-			$updated = wp_update_comment( wp_slash( (array) $prepared_args ) );
+			$prepared_review = $this->validate_review( $prepared_review );
 
-			if ( false === $updated ) {
-				return new \WP_Error( 'woocommerce_rest_comment_failed_edit', __( 'Updating review failed.', 'woocommerce-rest-api' ), array( 'status' => 500 ) );
-			}
+			wp_update_comment( wp_slash( $prepared_review ) );
 
 			if ( isset( $request['status'] ) ) {
-				$this->handle_status_param( $request['status'], $id );
+				$this->handle_status_param( $request['status'], $review_id );
 			}
+
+			if ( ! empty( $request['rating'] ) ) {
+				update_comment_meta( $review_id, 'rating', $request['rating'] );
+			}
+		} catch ( \WC_REST_Exception $e ) {
+			return new \WP_Error( $e->getErrorCode(), $e->getMessage(), array( 'status' => $e->getCode() ) );
 		}
 
-		if ( ! empty( $request['rating'] ) ) {
-			update_comment_meta( $id, 'rating', $request['rating'] );
-		}
+		$review = get_comment( $review_id );
 
-		$review = get_comment( $id );
-
-		/** This action is documented in includes/api/class-wc-rest-product-reviews-controller.php */
+		/**
+		 * Fires after a comment is created or updated via the REST API.
+		 *
+		 * @param \WP_Comment      $review   Inserted or updated comment object.
+		 * @param \WP_REST_Request $request  Request object.
+		 * @param bool            $creating True when creating a comment, false when updating.
+		 */
 		do_action( 'woocommerce_rest_insert_product_review', $review, $request, false );
 
 		$fields_update = $this->update_additional_fields_for_object( $review, $request );
@@ -563,27 +612,26 @@ class ProductReviews extends AbstractController {
 	 * Prepare a single product review to be inserted into the database.
 	 *
 	 * @param  \WP_REST_Request $request Request object.
-	 * @return array|\WP_Error  $prepared_review
+	 * @return array  $prepared_review
 	 */
 	protected function prepare_item_for_database( $request ) {
-		if ( isset( $request['id'] ) ) {
-			$prepared_review['comment_ID'] = (int) $request['id'];
-		}
+		$mappings = [
+			'comment_ID'           => 'id',
+			'comment_content'      => 'review',
+			'comment_post_ID'      => 'product_id',
+			'comment_author'       => 'reviewer',
+			'comment_author_email' => 'reviewer_email',
+		];
 
-		if ( isset( $request['review'] ) ) {
-			$prepared_review['comment_content'] = $request['review'];
-		}
+		$prepared_review = [
+			'comment_type' => 'review',
+		];
 
-		if ( isset( $request['product_id'] ) ) {
-			$prepared_review['comment_post_ID'] = (int) $request['product_id'];
-		}
-
-		if ( isset( $request['reviewer'] ) ) {
-			$prepared_review['comment_author'] = $request['reviewer'];
-		}
-
-		if ( isset( $request['reviewer_email'] ) ) {
-			$prepared_review['comment_author_email'] = $request['reviewer_email'];
+		foreach ( $mappings as $key => $value ) {
+			if ( ! isset( $request[ $value ] ) ) {
+				continue;
+			}
+			$prepared_review[ $key ] = $request[ $value ];
 		}
 
 		if ( ! empty( $request['date_created'] ) ) {
@@ -600,16 +648,7 @@ class ProductReviews extends AbstractController {
 			}
 		}
 
-		/**
-		 * Filters a review after it is prepared for the database.
-		 *
-		 * Allows modification of the review right after it is prepared for the database.
-		 *
-		 * @since 3.5.0
-		 * @param array           $prepared_review The prepared review data for `wp_insert_comment`.
-		 * @param \WP_REST_Request $request         The current request.
-		 */
-		return apply_filters( 'woocommerce_rest_preprocess_product_review', $prepared_review, $request );
+		return $prepared_review;
 	}
 
 	/**

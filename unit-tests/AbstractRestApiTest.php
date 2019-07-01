@@ -171,9 +171,9 @@ abstract class AbstractRestApiTest extends WC_REST_Unit_Test_Case {
 						break;
 					default:
 						if ( is_array( $value ) ) {
-							$this->assertArraySubset( $value, $response->data[ $key ] );
+							$this->assertArraySubset( $value, $response->data[ $key ], print_r( array( 'key' => $key, 'data' => $response->data ), true ) );
 						} else {
-							$this->assertEquals( $value, $response->data[ $key ] );
+							$this->assertEquals( $value, $response->data[ $key ], print_r( array( 'key' => $key, 'data' => $response->data ), true ) );
 						}
 				}
 			}
