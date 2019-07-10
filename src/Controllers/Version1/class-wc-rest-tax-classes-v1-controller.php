@@ -4,8 +4,6 @@
  *
  * Handles requests to the /taxes/classes endpoint.
  *
- * @author   WooThemes
- * @category API
  * @package Automattic/WooCommerce/RestApi
  * @since    3.0.0
  */
@@ -40,43 +38,51 @@ class WC_REST_Tax_Classes_V1_Controller extends WC_REST_Controller {
 	 * Register the routes for tax classes.
 	 */
 	public function register_routes() {
-		register_rest_route( $this->namespace, '/' . $this->rest_base, array(
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base,
 			array(
-				'methods'             => WP_REST_Server::READABLE,
-				'callback'            => array( $this, 'get_items' ),
-				'permission_callback' => array( $this, 'get_items_permissions_check' ),
-				'args'                => $this->get_collection_params(),
-			),
-			array(
-				'methods'             => WP_REST_Server::CREATABLE,
-				'callback'            => array( $this, 'create_item' ),
-				'permission_callback' => array( $this, 'create_item_permissions_check' ),
-				'args'                => $this->get_endpoint_args_for_item_schema( WP_REST_Server::CREATABLE ),
-			),
-			'schema' => array( $this, 'get_public_item_schema' ),
-		) );
-
-		register_rest_route( $this->namespace, '/' . $this->rest_base . '/(?P<slug>\w[\w\s\-]*)', array(
-			'args' => array(
-				'slug' => array(
-					'description' => __( 'Unique slug for the resource.', 'woocommerce-rest-api' ),
-					'type'        => 'string',
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'get_items' ),
+					'permission_callback' => array( $this, 'get_items_permissions_check' ),
+					'args'                => $this->get_collection_params(),
 				),
-			),
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'create_item' ),
+					'permission_callback' => array( $this, 'create_item_permissions_check' ),
+					'args'                => $this->get_endpoint_args_for_item_schema( WP_REST_Server::CREATABLE ),
+				),
+				'schema' => array( $this, 'get_public_item_schema' ),
+			)
+		);
+
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/(?P<slug>\w[\w\s\-]*)',
 			array(
-				'methods'             => WP_REST_Server::DELETABLE,
-				'callback'            => array( $this, 'delete_item' ),
-				'permission_callback' => array( $this, 'delete_item_permissions_check' ),
-				'args'                => array(
-					'force' => array(
-						'default'     => false,
-						'type'        => 'boolean',
-						'description' => __( 'Required to be true, as resource does not support trashing.', 'woocommerce-rest-api' ),
+				'args'   => array(
+					'slug' => array(
+						'description' => __( 'Unique slug for the resource.', 'woocommerce-rest-api' ),
+						'type'        => 'string',
 					),
 				),
-			),
-			'schema' => array( $this, 'get_public_item_schema' ),
-		) );
+				array(
+					'methods'             => WP_REST_Server::DELETABLE,
+					'callback'            => array( $this, 'delete_item' ),
+					'permission_callback' => array( $this, 'delete_item_permissions_check' ),
+					'args'                => array(
+						'force' => array(
+							'default'     => false,
+							'type'        => 'boolean',
+							'description' => __( 'Required to be true, as resource does not support trashing.', 'woocommerce-rest-api' ),
+						),
+					),
+				),
+				'schema' => array( $this, 'get_public_item_schema' ),
+			)
+		);
 	}
 
 	/**
@@ -126,7 +132,7 @@ class WC_REST_Tax_Classes_V1_Controller extends WC_REST_Controller {
 	/**
 	 * Get all tax classes.
 	 *
-	 * @param WP_REST_Request $request
+	 * @param WP_REST_Request $request Full details about the request.
 	 * @return array
 	 */
 	public function get_items( $request ) {
@@ -235,7 +241,7 @@ class WC_REST_Tax_Classes_V1_Controller extends WC_REST_Controller {
 	/**
 	 * Prepare a single tax class output for response.
 	 *
-	 * @param array $tax_class Tax class data.
+	 * @param array           $tax_class Tax class data.
 	 * @param WP_REST_Request $request Request object.
 	 * @return WP_REST_Response $response Response data.
 	 */
