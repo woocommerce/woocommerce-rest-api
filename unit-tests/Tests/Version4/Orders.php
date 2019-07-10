@@ -129,7 +129,7 @@ class Orders extends AbstractRestApiTest {
 				array(
 					'method_id'    => 'flat_rate',
 					'method_title' => 'Flat rate',
-					'total'        => '10',
+					'total'        => '10.00',
 				),
 			),
 		];
