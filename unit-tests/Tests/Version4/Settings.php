@@ -390,7 +390,7 @@ class Settings extends WC_REST_Unit_Test_Case {
 
 		$result = $controller->get_setting( 'test', 'woocommerce_shop_page_display' );
 
-		$this->assertIsWPError( $result );
+		$this->assertWPError( $result );
 	}
 
 	/**
