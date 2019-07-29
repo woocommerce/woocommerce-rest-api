@@ -31,7 +31,7 @@ Accessing a certain version is done in the URL. For example, to target `v1` of t
 And to access `v2`:
 
 ```
-/wp-json/wc/v1
+/wp-json/wc/v2
 ```
 
 The benefit to this is the client knows that endpoints are available in each version and can account for those specifically. Adding endpoints without this kind of discovery would be a nightmare; you wouldn't know if the API on a user's store actually had the endpoints and schemas you need because it would also depend on WooCommerce version.
