@@ -199,6 +199,20 @@ class Orders extends AbstractObjectsController {
 			$args['post__in'] = $order_ids;
 		}
 
+		// Set custom args to handle later during clauses.
+		$custom_keys = array(
+			'updated_since',
+			'created_since',
+			'updated_before',
+			'created_before',
+		);
+
+		foreach ( $custom_keys as $key ) {
+			if ( isset( $request[ $key ] ) && ! empty( $request[ $key ] ) ) {
+				$args[ $key ] = $request[ $key ];
+			}
+		}
+
 		return $args;
 	}
 
@@ -1180,6 +1194,80 @@ class Orders extends AbstractObjectsController {
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
+		$params['updated_since'] = array(
+			'description'       => __( 'Filter orders by since last updated date.', 'woocommerce-rest-api' ),
+			'type'              => 'string',
+			'format'            => 'date-time',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['created_since'] = array(
+			'description'       => __( 'Filter orders by since created date.', 'woocommerce-rest-api' ),
+			'type'              => 'string',
+			'format'            => 'date-time',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['updated_before'] = array(
+			'description'       => __( 'Filter orders by before last updated date.', 'woocommerce-rest-api' ),
+			'type'              => 'string',
+			'format'            => 'date-time',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['created_before'] = array(
+			'description'       => __( 'Filter orders by before created date.', 'woocommerce-rest-api' ),
+			'type'              => 'string',
+			'format'            => 'date-time',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
 		return $params;
+	}
+
+
+	/**
+	 * Add in conditional search filters for products.
+	 *
+	 * @param array     $args Query args.
+	 * @param \WC_Query $wp_query WC_Query object.
+	 * @return array
+	 */
+	public function get_items_query_clauses( $args, $wp_query ) {
+		global $wpdb;
+
+		if ( $wp_query->get( 'updated_since' ) ) {
+			$args['where'] .= $wpdb->prepare( " AND {$wpdb->posts}.post_modified > %s", $wp_query->get( 'updated_since' ) );
+		}
+
+		if ( $wp_query->get( 'created_since' ) ) {
+			$args['where'] .= $wpdb->prepare( " AND {$wpdb->posts}.post_date > %s", $wp_query->get( 'created_since' ) );
+		}
+
+		if ( $wp_query->get( 'updated_before' ) ) {
+			$args['where'] .= $wpdb->prepare( " AND {$wpdb->posts}.post_modified < %s", $wp_query->get( 'updated_before' ) );
+		}
+
+		if ( $wp_query->get( 'created_before' ) ) {
+			$args['where'] .= $wpdb->prepare( " AND {$wpdb->posts}.post_date < %s", $wp_query->get( 'created_before' ) );
+		}
+
+		return $args;
+	}
+
+
+	/**
+	 * Get a collection of posts and add the post title filter option to \WP_Query.
+	 *
+	 * @param \WP_REST_Request $request Full details about the request.
+	 *
+	 * @return \WP_Error|\WP_REST_Response
+	 */
+	public function get_items( $request ) {
+		add_filter( 'posts_clauses', array( $this, 'get_items_query_clauses' ), 10, 2 );
+		$response = parent::get_items( $request );
+		remove_filter( 'posts_clauses', array( $this, 'get_items_query_clauses' ), 10 );
+
+		return $response;
 	}
 }
