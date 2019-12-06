@@ -548,7 +548,11 @@ class SystemStatusTools extends AbstractController {
 		global $wpdb;
 		$wpdb->query( "TRUNCATE TABLE {$wpdb->prefix}woocommerce_tax_rates;" );
 		$wpdb->query( "TRUNCATE TABLE {$wpdb->prefix}woocommerce_tax_rate_locations;" );
-		\WC_Cache_Helper::incr_cache_prefix( 'taxes' );
+		if ( method_exists( '\WC_Cache_Helper', 'invalidate_cache_group' ) ) {
+			\WC_Cache_Helper::invalidate_cache_group( 'taxes' );
+		} else {
+			\WC_Cache_Helper::incr_cache_prefix( 'taxes' );
+		}
 		return __( 'Tax rates successfully deleted', 'woocommerce-rest-api' );
 	}
 
