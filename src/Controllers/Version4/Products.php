@@ -494,7 +494,7 @@ class Products extends AbstractObjectsController {
 				),
 				'images'                => array(
 					'description' => __( 'List of images.', 'woocommerce-rest-api' ),
-					'type'        => 'object',
+					'type'        => 'array',
 					'context'     => array( 'view', 'edit', 'embed' ),
 					'items'       => array(
 						'type'       => 'object',
