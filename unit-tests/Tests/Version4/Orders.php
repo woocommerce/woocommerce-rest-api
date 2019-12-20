@@ -562,6 +562,76 @@ class Orders extends AbstractRestApiTest {
 	}
 
 	/**
+	 * Tests updating an order after deleting a product.
+	 *
+	 * @since 3.9.0
+	 */
+	public function test_update_order_after_delete_product() {
+		$product    = ProductHelper::create_simple_product();
+		$order      = OrderHelper::create_order( 1, $product );
+		$line_items = $order->get_items( 'line_item' );
+		$item       = current( $line_items );
+		$expected   = array(
+			'line_items' => array(
+				array(
+					'id'           => $item->get_id(),
+					'name'         => 'Dummy Product',
+					'product_id'   => 0,
+					'variation_id' => 0,
+					'quantity'     => 10,
+					'tax_class'    => '',
+					'subtotal'     => '40.00',
+					'subtotal_tax' => '0.00',
+					'total'        => '40.00',
+					'total_tax'    => '0.00',
+					'taxes'        => array(),
+					'meta_data'    => array(),
+					'sku'          => null,
+					'price'        => 4,
+				),
+			)
+		);
+
+		$product->delete( true );
+
+		$response = $this->do_request(
+			'/wc/v4/orders/' . $order->get_id(),
+			'PUT',
+			array(
+				'line_items' => array(
+					array(
+						'id' => $item->get_id(),
+						'quantity'   => 10,
+					),
+				),
+			)
+		);
+
+		$this->assertExpectedResponse( $response, 200, $expected );
+	}
+
+	/**
+	 * Tests create an order with an invalid product.
+	 *
+	 * @since 3.9.0
+	 */
+	public function test_create_order_with_invalid_product() {
+		$response = $this->do_request(
+			'/wc/v4/orders/',
+			'POST',
+			array(
+				'line_items' => array(
+					array(
+						'quantity' => 2,
+					),
+				),
+			)
+		);
+
+		$this->assertExpectedResponse( $response, 400, array( 'code' => 'woocommerce_rest_required_product_reference' ) );
+	}
+
+	/**
 	 * Tests updating an order and adding a coupon.
 	 *
 	 * @since 3.5.0
