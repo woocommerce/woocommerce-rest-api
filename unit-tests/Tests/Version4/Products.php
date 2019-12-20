@@ -93,6 +93,31 @@ class Products extends WC_REST_Unit_Test_Case {
 	}
 
 	/**
+	 * Test getting products with an orderby clause.
+	 *
+	 * @since 3.9.0
+	 */
+	public function test_get_products_with_orderby() {
+		// The menu ordering should be the inverse of standard ordering.
+		$product1 = ProductHelper::create_simple_product();
+		$product1->set_menu_order( 1 );
+		$product1->save();
+		$product2 = ProductHelper::create_simple_product();
+		$product2->set_menu_order( 0 );
+		$product2->save();
+
+		$request = new WP_REST_Request( 'GET', '/wc/v4/products' );
+		$request->set_query_params( array( 'orderby' => 'menu_order', 'order' => 'asc' ) );
+		$response = $this->server->dispatch( $request );
+		$this->assertEquals( 200, $response->get_status() );
+
+		$products = $response->get_data();
+		$this->assertEquals( 2, count( $products ) );
+		$this->assertEquals( $product2->get_id(), $products[0]['id'] );
+		$this->assertEquals( $product1->get_id(), $products[1]['id'] );
+	}
+
+	/**
 	 * Test getting a single product.
 	 *
 	 * @since 3.5.0

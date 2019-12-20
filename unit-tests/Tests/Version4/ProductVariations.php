@@ -84,6 +84,23 @@ class ProductVariations extends WC_REST_Unit_Test_Case {
 	}
 
 	/**
+	 * Test getting variations with an orderby clause.
+	 *
+	 * @since 3.9.0
+	 */
+	public function test_get_variations_with_orderby() {
+		$product    = \Automattic\WooCommerce\RestApi\UnitTests\Helpers\ProductHelper::create_variation_product();
+		$request = new WP_REST_Request( 'GET', '/wc/v4/products/' . $product->get_id() . '/variations' );
+		$request->set_query_params( array( 'orderby' => 'menu_order' ) );
+		$response   = $this->server->dispatch( $request );
+		$variations = $response->get_data();
+		$this->assertEquals( 200, $response->get_status() );
+		$this->assertEquals( 2, count( $variations ) );
+		$this->assertEquals( 'DUMMY SKU VARIABLE SMALL', $variations[0]['sku'] );
+		$this->assertEquals( 'size', $variations[0]['attributes'][0]['name'] );
+	}
+
+	/**
 	 * Test getting a single variation.
 	 *
 	 * @since 3.5.0

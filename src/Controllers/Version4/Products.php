@@ -804,7 +804,7 @@ class Products extends AbstractObjectsController {
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
-		$params['orderby']['enum'] = array_merge( $params['orderby']['enum'], array( 'price', 'popularity', 'rating' ) );
+		$params['orderby']['enum'] = array_merge( $params['orderby']['enum'], array( 'menu_order', 'price', 'popularity', 'rating' ) );
 
 		return $params;
 	}
