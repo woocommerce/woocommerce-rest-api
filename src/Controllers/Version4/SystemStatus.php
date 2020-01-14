@@ -57,15 +57,9 @@ class SystemStatus extends AbstractController {
 	 * @return \WP_Error|\WP_REST_Response
 	 */
 	public function get_items( $request ) {
-		$schema   = $this->get_item_schema();
-		$mappings = $this->get_item_mappings();
-		$response = array();
-
-		foreach ( $mappings as $section => $values ) {
-			$response[ $section ] = $values;
-		}
-
-		$response = $this->prepare_item_for_response( $response, $request );
+		$fields   = $this->get_fields_for_response( $request );
+		$mappings = $this->get_item_mappings( $fields );
+		$response = $this->prepare_item_for_response( $mappings, $request );
 
 		return rest_ensure_response( $response );
 	}
@@ -101,7 +95,7 @@ class SystemStatus extends AbstractController {
 							'context'     => array( 'view' ),
 							'readonly'    => true,
 						),
-						'wc_version'                => array(
+						'version'                => array(
 							'description' => __( 'WooCommerce version.', 'woocommerce-rest-api' ),
 							'type'        => 'string',
 							'context'     => array( 'view' ),
@@ -551,9 +545,10 @@ class SystemStatus extends AbstractController {
 	/**
 	 * Return an array of sections and the data associated with each.
 	 *
+	 * @param array $fields List of fields to be included on the response.
 	 * @return array
 	 */
-	public function get_item_mappings() {
+	public function get_item_mappings( $fields ) {
 		$plugin_info     = new \Automattic\WooCommerce\RestApi\Controllers\Version4\Utilities\PluginInformation();
 		$theme_info      = new \Automattic\WooCommerce\RestApi\Controllers\Version4\Utilities\ThemeInformation();
 		$server          = new \Automattic\WooCommerce\RestApi\Controllers\Version4\Utilities\ServerEnvironment();
@@ -562,7 +557,7 @@ class SystemStatus extends AbstractController {
 		$woo_environment = new \Automattic\WooCommerce\RestApi\Controllers\Version4\Utilities\WooEnvironment();
 
 		return array(
-			'environment'        => $server->get_environment_info(),
+			'environment'        => $server->get_environment_info( $fields ),
 			'database'           => $database->get_database_info(),
 			'active_plugins'     => $plugin_info->get_active_plugin_data(),
 			'inactive_plugins'   => $plugin_info->get_inactive_plugin_data(),

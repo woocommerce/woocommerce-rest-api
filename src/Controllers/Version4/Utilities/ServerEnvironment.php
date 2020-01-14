@@ -11,15 +11,51 @@ namespace Automattic\WooCommerce\RestApi\Controllers\Version4\Utilities;
  * ServerEnvironment class.
  */
 class ServerEnvironment {
+
+	/**
+	 * Check if field item exists.
+	 *
+	 * @param string $section Fields section.
+	 * @param array  $items List of items to check for.
+	 * @param array  $fields List of fields to be included on the response.
+	 * @return bool
+	 */
+	private function check_if_field_item_exists( $section, $items, $fields ) {
+		if ( ! in_array( $section, $fields, true ) ) {
+			return false;
+		}
+		$exclude = array();
+		foreach ( $fields as $field ) {
+			$values = explode( '.', $field );
+			if ( $section !== $values[0] || empty( $values[1] ) ) {
+				continue;
+			}
+			$exclude[] = $values[1];
+		}
+		return 0 <= count( array_intersect( $items, $exclude ) );
+	}
+
 	/**
 	 * Get array of environment information. Includes thing like software
 	 * versions, and various server settings.
 	 *
+	 * @param array $fields List of fields to be included on the response.
 	 * @return array
 	 */
-	public function get_environment_info() {
-		$post_request     = $this->test_post_request();
-		$get_request      = $this->test_get_request();
+	public function get_environment_info( $fields = array( 'environment' ) ) {
+		$post_request = array(
+			'success'  => null,
+			'response' => null,
+		);
+		$get_request  = $post_request;
+
+		if ( $this->check_if_field_item_exists( 'environment', array( 'remote_post_successful', 'remote_post_response' ), $fields ) ) {
+			$post_request = $this->test_post_request();
+		}
+		if ( $this->check_if_field_item_exists( 'environment', array( 'remote_get_successful', 'remote_get_response' ), $fields ) ) {
+			$get_request = $this->test_get_request();
+		}
+
 		$database_version = wc_get_server_database_version();
 
 		// Return all environment info. Described by JSON Schema.
@@ -28,7 +64,7 @@ class ServerEnvironment {
 			'site_url'                  => get_option( 'siteurl' ),
 			'version'                   => WC()->version,
 			'log_directory'             => \WC_LOG_DIR,
-			'log_directory_writable'    => (bool) @fopen( \WC_LOG_DIR . 'test-log.log', 'a' ), // phpcs:ignore
+			'log_directory_writable'    => (bool) @fopen( \WC_LOG_DIR . 'test-log.log', 'a' ), // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.WP.AlternativeFunctions.file_system_read_fopen
 			'wp_version'                => get_bloginfo( 'version' ),
 			'wp_multisite'              => is_multisite(),
 			'wp_memory_limit'           => $this->get_wp_memory_limit(),
@@ -39,8 +75,8 @@ class ServerEnvironment {
 			'server_info'               => $this->get_server_software(),
 			'php_version'               => phpversion(),
 			'php_post_max_size'         => wc_let_to_num( ini_get( 'post_max_size' ) ),
-			'php_max_execution_time'    => ini_get( 'max_execution_time' ),
-			'php_max_input_vars'        => ini_get( 'max_input_vars' ),
+			'php_max_execution_time'    => (int) ini_get( 'max_execution_time' ),
+			'php_max_input_vars'        => (int) ini_get( 'max_input_vars' ),
 			'curl_version'              => $this->get_curl_version(),
 			'suhosin_installed'         => extension_loaded( 'suhosin' ),
 			'max_upload_size'           => wp_max_upload_size(),
