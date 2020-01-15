@@ -117,7 +117,6 @@ class DatabaseInformation {
 		return array(
 			'wc_database_version'    => get_option( 'woocommerce_db_version' ),
 			'database_prefix'        => $wpdb->prefix,
-			'maxmind_geoip_database' => \WC_Geolocation::get_local_database_path(),
 			'database_tables'        => $tables,
 			'database_size'          => $database_size,
 		);

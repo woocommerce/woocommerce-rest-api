@@ -295,12 +295,6 @@ class SystemStatus extends AbstractController {
 							'context'     => array( 'view' ),
 							'readonly'    => true,
 						),
-						'maxmind_geoip_database' => array(
-							'description' => __( 'MaxMind GeoIP database.', 'woocommerce-rest-api' ),
-							'type'        => 'string',
-							'context'     => array( 'view' ),
-							'readonly'    => true,
-						),
 						'database_tables'        => array(
 							'description' => __( 'Database tables.', 'woocommerce-rest-api' ),
 							'type'        => 'array',
