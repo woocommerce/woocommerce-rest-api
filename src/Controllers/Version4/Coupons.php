@@ -123,6 +123,20 @@ class Coupons extends AbstractObjectsController {
 			$args['s']      = false;
 		}
 
+		// Set custom args to handle later during clauses.
+		$custom_keys = array(
+			'updated_since',
+			'created_since',
+			'updated_before',
+			'created_before',
+		);
+
+		foreach ( $custom_keys as $key ) {
+			if ( ! empty( $request[ $key ] ) ) {
+				$args[ $key ] = $request[ $key ];
+			}
+		}
+
 		return $args;
 	}
 
@@ -417,6 +431,34 @@ class Coupons extends AbstractObjectsController {
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
+		$params['updated_since'] = array(
+			'description'       => __( 'Filter products by since last updated date.', 'woocommerce-rest-api' ),
+			'type'              => 'string',
+			'format'            => 'date-time',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['created_since'] = array(
+			'description'       => __( 'Filter products by since created date.', 'woocommerce-rest-api' ),
+			'type'              => 'string',
+			'format'            => 'date-time',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['updated_before'] = array(
+			'description'       => __( 'Filter products by before last updated date.', 'woocommerce-rest-api' ),
+			'type'              => 'string',
+			'format'            => 'date-time',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['created_before'] = array(
+			'description'       => __( 'Filter products by before created date.', 'woocommerce-rest-api' ),
+			'type'              => 'string',
+			'format'            => 'date-time',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
 		return $params;
 	}
 
@@ -458,6 +500,22 @@ class Coupons extends AbstractObjectsController {
 			$search = $wpdb->esc_like( $search );
 			$search = "'%" . $search . "%'";
 			$where .= ' AND ' . $wpdb->posts . '.post_title LIKE ' . $search;
+		}
+
+		if ( $wp_query->get( 'updated_since' ) ) {
+			$where .= $wpdb->prepare( " AND {$wpdb->posts}.post_modified > %s", $wp_query->get( 'updated_since' ) );
+		}
+
+		if ( $wp_query->get( 'created_since' ) ) {
+			$where .= $wpdb->prepare( " AND {$wpdb->posts}.post_date > %s", $wp_query->get( 'created_since' ) );
+		}
+
+		if ( $wp_query->get( 'updated_before' ) ) {
+			$where .= $wpdb->prepare( " AND {$wpdb->posts}.post_modified < %s", $wp_query->get( 'updated_before' ) );
+		}
+
+		if ( $wp_query->get( 'created_before' ) ) {
+			$where .= $wpdb->prepare( " AND {$wpdb->posts}.post_date < %s", $wp_query->get( 'created_before' ) );
 		}
 
 		return $where;
