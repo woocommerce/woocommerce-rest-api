@@ -167,6 +167,22 @@ class Customers extends AbstractController {
 			$prepared_args['search_columns'] = array( 'user_email' );
 		}
 
+		$prepared_args['date_query'] = array();
+		if ( isset( $request[ 'created_since' ] ) || isset( $request[ 'created_before' ] ) ) {
+			$date = [
+				'column' => 'user_registered',
+			];
+
+			if (isset( $request[ 'created_since' ] ) && !empty( $request[ 'created_since' ] )) {
+				$date['after'] = $request[ 'created_since' ];
+			}
+
+			if (isset( $request[ 'created_before' ] ) && !empty( $request[ 'created_before' ] )) {
+				$date['before'] = $request[ 'created_before' ];
+			}
+			$prepared_args['date_query'][] = $date;
+		}
+
 		// Filter by role.
 		if ( 'all' !== $request['role'] ) {
 			$prepared_args['role'] = $request['role'];
@@ -723,6 +739,20 @@ class Customers extends AbstractController {
 			'enum'               => array_merge( array( 'all' ), $this->get_role_names() ),
 			'validate_callback'  => 'rest_validate_request_arg',
 		);
+
+		$params['created_since'] = array(
+			'description'       => __( 'Filter customers by since created date.', 'woocommerce-rest-api' ),
+			'type'              => 'string',
+			'format'            => 'date-time',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+		$params['created_before'] = array(
+			'description'       => __( 'Filter customers by before created date.', 'woocommerce-rest-api' ),
+			'type'              => 'string',
+			'format'            => 'date-time',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
 		return $params;
 	}
 
