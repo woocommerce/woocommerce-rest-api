@@ -432,28 +432,28 @@ class Coupons extends AbstractObjectsController {
 		);
 
 		$params['updated_since'] = array(
-			'description'       => __( 'Filter products by since last updated date.', 'woocommerce-rest-api' ),
+			'description'       => __( 'Filter coupons by since last updated date.', 'woocommerce-rest-api' ),
 			'type'              => 'string',
 			'format'            => 'date-time',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
 		$params['created_since'] = array(
-			'description'       => __( 'Filter products by since created date.', 'woocommerce-rest-api' ),
+			'description'       => __( 'Filter coupons by since created date.', 'woocommerce-rest-api' ),
 			'type'              => 'string',
 			'format'            => 'date-time',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
 		$params['updated_before'] = array(
-			'description'       => __( 'Filter products by before last updated date.', 'woocommerce-rest-api' ),
+			'description'       => __( 'Filter coupons by before last updated date.', 'woocommerce-rest-api' ),
 			'type'              => 'string',
 			'format'            => 'date-time',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
 		$params['created_before'] = array(
-			'description'       => __( 'Filter products by before created date.', 'woocommerce-rest-api' ),
+			'description'       => __( 'Filter coupons by before created date.', 'woocommerce-rest-api' ),
 			'type'              => 'string',
 			'format'            => 'date-time',
 			'validate_callback' => 'rest_validate_request_arg',
