@@ -265,6 +265,22 @@ class OrderRefunds extends Orders {
 		$args['post_status']     = array_keys( wc_get_order_statuses() );
 		$args['post_parent__in'] = array( absint( $request['order_id'] ) );
 
+		$args['date_query'] = array();
+		if ( isset( $request[ 'created_since' ] ) || isset( $request[ 'created_before' ] ) ) {
+			$date = [
+				'column' => 'post_created',
+			];
+
+			if (isset( $request[ 'created_since' ] ) && !empty( $request[ 'created_since' ] )) {
+				$date['after'] = $request[ 'created_since' ];
+			}
+
+			if (isset( $request[ 'created_before' ] ) && !empty( $request[ 'created_before' ] )) {
+				$date['before'] = $request[ 'created_before' ];
+			}
+			$args['date_query'][] = $date;
+		}
+
 		return $args;
 	}
 
@@ -655,6 +671,19 @@ class OrderRefunds extends Orders {
 			'description'       => __( 'Number of decimal points to use in each resource.', 'woocommerce-rest-api' ),
 			'type'              => 'integer',
 			'sanitize_callback' => 'absint',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['created_since'] = array(
+			'description'       => __( 'Filter customers by since created date.', 'woocommerce-rest-api' ),
+			'type'              => 'string',
+			'format'            => 'date-time',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+		$params['created_before'] = array(
+			'description'       => __( 'Filter customers by before created date.', 'woocommerce-rest-api' ),
+			'type'              => 'string',
+			'format'            => 'date-time',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
