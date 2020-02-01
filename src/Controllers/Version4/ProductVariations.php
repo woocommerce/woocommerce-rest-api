@@ -662,6 +662,10 @@ class ProductVariations extends Products {
 			'max_price',
 			'stock_status',
 			'low_in_stock',
+			'updated_since',
+			'created_since',
+			'updated_before',
+			'created_before',
 		);
 		foreach ( $custom_keys as $key ) {
 			if ( ! empty( $request[ $key ] ) ) {

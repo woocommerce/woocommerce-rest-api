@@ -798,6 +798,34 @@ class Products extends AbstractObjectsController {
 			'sanitize_callback' => 'wc_string_to_bool',
 		);
 
+		$params['updated_since'] = array(
+			'description'       => __( 'Filter products by since last updated date.', 'woocommerce-rest-api' ),
+			'type'              => 'string',
+			'format'            => 'date-time',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['created_since'] = array(
+			'description'       => __( 'Filter products by since created date.', 'woocommerce-rest-api' ),
+			'type'              => 'string',
+			'format'            => 'date-time',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['updated_before'] = array(
+			'description'       => __( 'Filter products by before last updated date.', 'woocommerce-rest-api' ),
+			'type'              => 'string',
+			'format'            => 'date-time',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['created_before'] = array(
+			'description'       => __( 'Filter products by before created date.', 'woocommerce-rest-api' ),
+			'type'              => 'string',
+			'format'            => 'date-time',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
 		$params['search'] = array(
 			'description'       => __( 'Search by similar product name or sku.', 'woocommerce-rest-api' ),
 			'type'              => 'string',
@@ -923,6 +951,22 @@ class Products extends AbstractObjectsController {
 			$args['where'] .= $wpdb->prepare( ' AND wc_product_meta_lookup.stock_quantity <= %d', $low_stock );
 		}
 
+		if ( $wp_query->get( 'updated_since' ) ) {
+			$args['where'] .= $wpdb->prepare( " AND {$wpdb->posts}.post_modified > %s", $wp_query->get( 'updated_since' ) );
+		}
+
+		if ( $wp_query->get( 'created_since' ) ) {
+			$args['where'] .= $wpdb->prepare( " AND {$wpdb->posts}.post_date > %s", $wp_query->get( 'created_since' ) );
+		}
+
+		if ( $wp_query->get( 'updated_before' ) ) {
+			$args['where'] .= $wpdb->prepare( " AND {$wpdb->posts}.post_modified < %s", $wp_query->get( 'updated_before' ) );
+		}
+
+		if ( $wp_query->get( 'created_before' ) ) {
+			$args['where'] .= $wpdb->prepare( " AND {$wpdb->posts}.post_date < %s", $wp_query->get( 'created_before' ) );
+		}
+
 		return $args;
 	}
 
@@ -961,6 +1005,10 @@ class Products extends AbstractObjectsController {
 			'max_price',
 			'stock_status',
 			'low_in_stock',
+			'updated_since',
+			'created_since',
+			'updated_before',
+			'created_before',
 		);
 		foreach ( $custom_keys as $key ) {
 			if ( ! empty( $request[ $key ] ) ) {
