@@ -336,7 +336,7 @@ class WC_REST_Products_Controller extends WC_REST_Products_V2_Controller {
 
 		// Post status.
 		if ( isset( $request['status'] ) ) {
-			$product->set_status( get_post_status_object( $request['status'] ) ? $request['status'] : 'draft' );
+			$product->set_status( get_post_status_object( $request['status'] ) ? $request['status'] : 'publish' );
 		}
 
 		// Post slug.
