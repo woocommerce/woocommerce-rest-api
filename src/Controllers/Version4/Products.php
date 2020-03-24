@@ -839,8 +839,8 @@ class Products extends AbstractObjectsController {
 	 */
 	protected function get_data_for_response( $object, $request ) {
 		$formatter = new ProductResponse();
-
-		return $formatter->prepare_response( $object, $this->get_request_context( $request ) );
+		$fields = $this->get_fields_for_response( $request );
+		return $formatter->prepare_response( $object, $this->get_request_context( $request ), $fields );
 	}
 
 	/**

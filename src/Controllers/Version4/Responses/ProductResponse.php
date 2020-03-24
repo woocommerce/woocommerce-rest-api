@@ -17,11 +17,12 @@ class ProductResponse extends AbstractObjectResponse {
 	/**
 	 * Convert object to match data in the schema.
 	 *
-	 * @param \WC_Product_Simple|\WC_Product_Grouped|\WC_Product_Variable|\WC_Product_External $object Product data.
+	 * @param \WC_Product_Simple|\WC_Product_Grouped|\WC_Product_Variable|\WC_Product_External $object  Product data.
 	 * @param string                                                                           $context Request context. Options: 'view' and 'edit'.
+	 * @param array                                                                            $fields  List of fields to return. If empty, all fields will be returned.
 	 * @return array
 	 */
-	public function prepare_response( $object, $context ) {
+	public function prepare_response( $object, $context, $fields = array() ) {
 		$data = array(
 			'id'                    => $object->get_id(),
 			'name'                  => $object->get_name( $context ),
@@ -78,21 +79,35 @@ class ProductResponse extends AbstractObjectResponse {
 			'reviews_allowed'       => $object->get_reviews_allowed( $context ),
 			'average_rating'        => $object->get_average_rating( $context ),
 			'rating_count'          => $object->get_rating_count(),
-			'related_ids'           => wp_parse_id_list( wc_get_related_products( $object->get_id() ) ),
 			'upsell_ids'            => wp_parse_id_list( $object->get_upsell_ids( $context ) ),
 			'cross_sell_ids'        => wp_parse_id_list( $object->get_cross_sell_ids( $context ) ),
 			'parent_id'             => $object->get_parent_id( $context ),
 			'purchase_note'         => $object->get_purchase_note( $context ),
 			'categories'            => $this->prepare_taxonomy_terms( $object ),
 			'tags'                  => $this->prepare_taxonomy_terms( $object, 'tag' ),
-			'images'                => $this->prepare_images( $object ),
-			'attributes'            => $this->prepare_attributes( $object ),
 			'default_attributes'    => $this->prepare_default_attributes( $object ),
 			'variations'            => array(),
 			'grouped_products'      => array(),
 			'menu_order'            => $object->get_menu_order( $context ),
-			'meta_data'             => $object->get_meta_data(),
 		);
+
+		/** Fetch high load fields only when required. */
+		// TODO: Optimize fetch method for these fields so that they can be loaded via eager loading.
+		if ( in_array( 'related_ids', $fields ) || empty( $fields ) ) {
+			$data['related_ids'] = wp_parse_id_list( wc_get_related_products( $object->get_id() ) );
+		}
+
+		if ( in_array( 'images', $fields ) || empty( $fields ) ) {
+			$data['images'] = $this->prepare_images( $object );
+		}
+
+		if ( in_array( 'attributes', $fields ) || empty( $fields ) ) {
+			$data['attributes'] = $this->prepare_attributes( $object );
+		}
+
+		if ( in_array( 'meta_data', $fields ) || empty( $fields ) ) {
+			$data['meta_data'] = $object->get_meta_data();
+		}
 
 		// Add variations to variable products.
 		if ( $object->is_type( 'variable' ) ) {
