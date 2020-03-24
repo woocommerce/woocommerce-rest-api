@@ -810,6 +810,15 @@ class Products extends AbstractObjectsController {
 	}
 
 	/**
+	 * Return true because Product factory can convert post object to product.
+	 *
+	 * @return bool
+	 */
+	protected function support_eager_loading() {
+		return apply_filters( 'woocommerce_rest_product_eager_loading', true );
+	}
+
+	/**
 	 * Get object.
 	 *
 	 * @param int $id Object ID.
