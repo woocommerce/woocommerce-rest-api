@@ -50,6 +50,15 @@ abstract class AbstractObjectsController extends AbstractController {
 	abstract protected function prepare_object_for_database( $request, $creating = false );
 
 	/**
+	 * Overwrite in extended class to declare support for eager loading of post objects.
+	 *
+	 * @return bool
+	 */
+	protected function support_eager_loading() {
+		return false;
+	}
+
+	/**
 	 * Register the routes for products.
 	 */
 	public function register_routes() {
@@ -251,15 +260,18 @@ abstract class AbstractObjectsController extends AbstractController {
 	}
 
 	/**
-	 * Get objects.
-	 *
+	 * Get objects. Works in two steps:
+	 * 1. Get ID's and total count to return for current page. This is so that if we need to perform a join,
+	 * we don't do it on whole table and just on specific IDs later on which should be faster.
+	 * 2. Fetch all post data, metadata with joined table if we need to with the IDs for current page.
 	 * @since  3.0.0
 	 * @param  array $query_args Query args.
 	 * @return array
 	 */
 	protected function get_objects( $query_args ) {
-		$query  = new \WP_Query();
-		$result = $query->query( $query_args );
+		$query    = new \WP_Query();
+		$post_ids = $query->query( $query_args );
+		$result   = array();
 
 		$total_posts = $query->found_posts;
 		if ( $total_posts < 1 ) {
@@ -268,6 +280,23 @@ abstract class AbstractObjectsController extends AbstractController {
 			$count_query = new \WP_Query();
 			$count_query->query( $query_args );
 			$total_posts = $count_query->found_posts;
+		} elseif ( $this->support_eager_loading() ) {
+			$posts = get_posts(
+				array(
+					'include'     => $post_ids,
+					'post_type'   => $this->post_type,
+					'post_status' => 'any',
+				)
+			);
+
+			// Preserve original sort order.
+			$post_ids = array_flip( $post_ids );
+			foreach ( $posts as $post ) {
+				$result[ $post->ID ] = $post;
+			}
+			$result = array_values( array_replace( $post_ids, $result ) );
+		} else {
+			$result = $post_ids;
 		}
 
 		return array(
