@@ -87,7 +87,7 @@ trait BatchTrait {
 	 *
 	 * @return array
 	 */
-	protected function get_public_batch_schema() {
+	public function get_public_batch_schema() {
 		$schema = array(
 			'$schema'    => 'http://json-schema.org/draft-04/schema#',
 			'title'      => 'batch',
