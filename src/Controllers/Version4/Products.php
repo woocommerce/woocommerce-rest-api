@@ -821,7 +821,7 @@ class Products extends AbstractObjectsController {
 	/**
 	 * Get object.
 	 *
-	 * @param int $id Object ID.
+	 * @param int|\WP_Post $id Object ID or post object.
 	 *
 	 * @since  3.0.0
 	 * @return \WC_Data|bool
