@@ -80,7 +80,8 @@ class Orders extends AbstractObjectsController {
 			$formatter->set_dp( $request['dp'] );
 		}
 
-		return $formatter->prepare_response( $object, $this->get_request_context( $request ) );
+		$fields = $this->get_fields_for_response( $request );
+		return $formatter->prepare_response( $object, $this->get_request_context( $request ), $fields );
 	}
 
 	/**
