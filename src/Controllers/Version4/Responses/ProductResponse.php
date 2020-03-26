@@ -19,7 +19,7 @@ class ProductResponse extends AbstractObjectResponse {
 	 *
 	 * @param \WC_Product_Simple|\WC_Product_Grouped|\WC_Product_Variable|\WC_Product_External $object  Product data.
 	 * @param string                                                                           $context Request context. Options: 'view' and 'edit'.
-	 * @param array                                                                            $fields  List of fields to return. If empty, all fields will be returned.
+	 * @param array                                                                            $fields  List of fields to return.
 	 * @return array
 	 */
 	public function prepare_response( $object, $context, $fields = array() ) {
