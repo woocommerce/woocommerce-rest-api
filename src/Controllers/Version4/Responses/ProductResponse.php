@@ -15,6 +15,54 @@ defined( 'ABSPATH' ) || exit;
 class ProductResponse extends AbstractObjectResponse {
 
 	/**
+	 * Get related product IDs.
+	 *
+	 * @param \WC_Product $product Product object.
+	 * @param string      $context Context for request. Can be 'view' or 'edit'.
+	 *
+	 * @return int[]  List of related product IDs.
+	 */
+	public function get_related_ids( $product, $context ) {
+		return wp_parse_id_list( wc_get_related_products( $product->get_id() ) );
+	}
+
+	/**
+	 * Get product images.
+	 *
+	 * @param \WC_Product $product Product object.
+	 * @param string      $context Context for request. Can be 'view' or 'edit'.
+	 *
+	 * @return array List of images.
+	 */
+	public function get_images( $product, $context ) {
+		return $this->prepare_images( $product );
+	}
+
+	/**
+	 * Get product attributes.
+	 *
+	 * @param \WC_Product $product Product object.
+	 * @param string      $context Context for request. Can be 'view' or 'edit'.
+	 *
+	 * @return array Product attributes.
+	 */
+	public function get_attributes( $product, $context ) {
+		return $this->prepare_attributes( $product );
+	}
+
+	/**
+	 * Get meta data.
+	 *
+	 * @param \WC_Product $product Product object.
+	 * @param string      $context Context for request. Can be 'view' or 'edit'.
+	 *
+	 * @return mixed Product meta data.
+	 */
+	public function get_meta_data( $product, $context ) {
+		return $product->get_meta_data();
+	}
+
+	/**
 	 * Convert object to match data in the schema.
 	 *
 	 * @param \WC_Product_Simple|\WC_Product_Grouped|\WC_Product_Variable|\WC_Product_External $object  Product data.
@@ -91,31 +139,18 @@ class ProductResponse extends AbstractObjectResponse {
 			'menu_order'            => $object->get_menu_order( $context ),
 		);
 
-		/** Fetch high load fields only when required. */
-		// TODO: Optimize fetch method for these fields so that they can be loaded via eager loading.
-		if ( in_array( 'related_ids', $fields ) || empty( $fields ) ) {
-			$data['related_ids'] = wp_parse_id_list( wc_get_related_products( $object->get_id() ) );
-		}
-
-		if ( in_array( 'images', $fields ) || empty( $fields ) ) {
-			$data['images'] = $this->prepare_images( $object );
-		}
-
-		if ( in_array( 'attributes', $fields ) || empty( $fields ) ) {
-			$data['attributes'] = $this->prepare_attributes( $object );
-		}
-
-		if ( in_array( 'meta_data', $fields ) || empty( $fields ) ) {
-			$data['meta_data'] = $object->get_meta_data();
-		}
+		$data = array_merge(
+					$data,
+					$this->fetch_fields_using_getters( $object, $context, $fields )
+				);
 
 		// Add variations to variable products.
-		if ( $object->is_type( 'variable' ) ) {
+		if ( $object->is_type( 'variable' ) && in_array( 'variations', $fields ) ) {
 			$data['variations'] = $object->get_children();
 		}
 
 		// Add grouped products data.
-		if ( $object->is_type( 'grouped' ) ) {
+		if ( $object->is_type( 'grouped' ) && in_array( 'grouped_products', $fields ) ) {
 			$data['grouped_products'] = $object->get_children();
 		}
 
