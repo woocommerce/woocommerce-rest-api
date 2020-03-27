@@ -138,11 +138,15 @@ class OrderResponse extends AbstractObjectResponse {
 	 * @return array
 	 */
 	public function prepare_response( $order, $context, $fields = array() ) {
-		$data              = $order->get_base_data();
-		$data              = array_merge(
-			                     $data,
-							     $this->fetch_fields_using_getters( $order, $context, $fields )
-							 );
+		if ( method_exists( $order, 'get_base_data' ) ) {
+			$data = array_merge(
+				$order->get_base_data(),
+				$this->fetch_fields_using_getters( $order, $context, $fields )
+			);
+		} else {
+			$data = $order->get_data();
+		}
+
 		$format_decimal    = array( 'discount_total', 'discount_tax', 'shipping_total', 'shipping_tax', 'shipping_total', 'shipping_tax', 'cart_tax', 'total', 'total_tax' );
 		$format_date       = array( 'date_created', 'date_modified', 'date_completed', 'date_paid' );
 		$format_line_items = array( 'line_items', 'tax_lines', 'shipping_lines', 'fee_lines', 'coupon_lines' );
