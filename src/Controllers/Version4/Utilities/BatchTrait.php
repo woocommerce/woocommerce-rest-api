@@ -25,8 +25,8 @@ trait BatchTrait {
 			return $limit;
 		}
 
-		$batches  = [ 'create', 'update', 'delete' ];
-		$response = [];
+		$batches  = array( 'create', 'update', 'delete' );
+		$response = array();
 
 		foreach ( $batches as $batch ) {
 			$response[ $batch ] = $this->{"batch_$batch"}( $this->get_batch_of_items_from_request( $request, $batch ) );
@@ -141,7 +141,7 @@ trait BatchTrait {
 	protected function check_batch_limit( $items ) {
 		$limit   = apply_filters( 'woocommerce_rest_batch_items_limit', 100, $this->get_normalized_rest_base() );
 		$total   = 0;
-		$batches = [ 'create', 'update', 'delete' ];
+		$batches = array( 'create', 'update', 'delete' );
 
 		foreach ( $batches as $batch ) {
 			if ( ! isset( $items[ $batch ] ) ) {
@@ -164,7 +164,7 @@ trait BatchTrait {
 	 * @return array
 	 */
 	protected function get_default_params() {
-		$defaults = [];
+		$defaults = array();
 		$schema   = $this->get_public_item_schema();
 		foreach ( $schema['properties'] as $arg => $options ) {
 			if ( isset( $options['default'] ) ) {
@@ -181,7 +181,7 @@ trait BatchTrait {
 	 * @return array Response data.
 	 */
 	protected function batch_create( $items ) {
-		$batch_response = [];
+		$batch_response = array();
 
 		foreach ( $items as $item ) {
 			$request = new \WP_REST_Request( 'POST' );
@@ -202,7 +202,7 @@ trait BatchTrait {
 	 * @return array Response data.
 	 */
 	protected function batch_update( $items ) {
-		$batch_response = [];
+		$batch_response = array();
 
 		foreach ( $items as $item ) {
 			$request = new \WP_REST_Request( 'PUT' );
@@ -222,16 +222,16 @@ trait BatchTrait {
 	 * @return array Response data.
 	 */
 	protected function batch_delete( $items ) {
-		$batch_response = [];
+		$batch_response = array();
 		$items          = wp_parse_id_list( $items );
 
 		foreach ( $items as $id ) {
 			$request = new \WP_REST_Request( 'DELETE' );
 			$request->set_query_params(
-				[
+				array(
 					'id'    => $id,
 					'force' => true,
-				]
+				)
 			);
 			$response         = $this->delete_item( $request );
 			$batch_response[] = $this->format_response( $id, $response );
