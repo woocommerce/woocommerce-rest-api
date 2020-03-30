@@ -285,7 +285,7 @@ abstract class AbstractObjectsController extends AbstractController {
 				array(
 					'include'     => $post_ids,
 					'post_type'   => $this->post_type,
-					'post_status' => 'any',
+					'post_status' => $query_args[ 'post_status' ] ?? 'any',
 				)
 			);
 
