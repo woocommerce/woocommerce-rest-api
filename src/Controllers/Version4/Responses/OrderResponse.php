@@ -48,7 +48,7 @@ class OrderResponse extends AbstractObjectResponse {
 	public function get_refunds( $order, $context ) {
 		// Refunds.
 		$refunds = array();
-		foreach ($order->get_refunds() as $refund ) {
+		foreach ( $order->get_refunds() as $refund ) {
 			$refunds[] = array(
 				'id'     => $refund->get_id(),
 				'reason' => $refund->get_reason() ? $refund->get_reason() : '',
@@ -145,6 +145,19 @@ class OrderResponse extends AbstractObjectResponse {
 			);
 		} else {
 			$data = $order->get_data();
+			// Fields not returned from `get_data`.
+			$additional_fields = array( 'refunds' );
+			$data = array_merge(
+				$data,
+				$this->fetch_fields_using_getters(
+					$order,
+					$context,
+					array_intersect(
+						$additional_fields,
+						$fields
+					)
+				)
+			);
 		}
 
 		$format_decimal    = array( 'discount_total', 'discount_tax', 'shipping_total', 'shipping_tax', 'shipping_total', 'shipping_tax', 'cart_tax', 'total', 'total_tax' );
