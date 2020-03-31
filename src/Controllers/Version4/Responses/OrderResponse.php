@@ -96,6 +96,7 @@ class OrderResponse extends AbstractObjectResponse {
 
 	/**
 	 * Get fee lines.
+	 *
 	 * @param \WC_Order $order   Order object.
 	 * @param string    $context Access context. Could be `view` or `edit`.
 	 *
@@ -147,7 +148,7 @@ class OrderResponse extends AbstractObjectResponse {
 			$data = $order->get_data();
 			// Fields not returned from `get_data`.
 			$additional_fields = array( 'refunds' );
-			$data = array_merge(
+			$data              = array_merge(
 				$data,
 				$this->fetch_fields_using_getters(
 					$order,
@@ -166,7 +167,7 @@ class OrderResponse extends AbstractObjectResponse {
 
 		// Format decimal values.
 		foreach ( $format_decimal as $key ) {
-			if ( ! in_array( $key, $fields ) ) {
+			if ( ! in_array( $key, $fields, true ) ) {
 				continue;
 			}
 			$data[ $key ] = wc_format_decimal( $data[ $key ], $this->dp );
@@ -174,7 +175,7 @@ class OrderResponse extends AbstractObjectResponse {
 
 		// Format date values.
 		foreach ( $format_date as $key ) {
-			if ( ! in_array( $key, $fields ) ) {
+			if ( ! in_array( $key, $fields, true ) ) {
 				continue;
 			}
 			$datetime              = $data[ $key ];
@@ -187,7 +188,7 @@ class OrderResponse extends AbstractObjectResponse {
 
 		// Format line items.
 		foreach ( $format_line_items as $key ) {
-			if ( ! in_array( $key, $fields ) ) {
+			if ( ! in_array( $key, $fields, true ) ) {
 				continue;
 			}
 			$data[ $key ] = array_values( array_map( array( $this, 'prepare_order_item_data' ), $data[ $key ] ) );

@@ -264,6 +264,7 @@ abstract class AbstractObjectsController extends AbstractController {
 	 * 1. Get ID's and total count to return for current page. This is so that if we need to perform a join,
 	 * we don't do it on whole table and just on specific IDs later on which should be faster.
 	 * 2. Fetch all post data, metadata with joined table if we need to with the IDs for current page.
+	 *
 	 * @since  3.0.0
 	 * @param  array $query_args Query args.
 	 * @return array
@@ -285,7 +286,7 @@ abstract class AbstractObjectsController extends AbstractController {
 				array(
 					'include'     => $post_ids,
 					'post_type'   => $this->post_type,
-					'post_status' => $query_args[ 'post_status' ] ?? 'any',
+					'post_status' => $query_args['post_status'] ?? 'any',
 				)
 			);
 

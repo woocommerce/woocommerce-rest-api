@@ -140,17 +140,17 @@ class ProductResponse extends AbstractObjectResponse {
 		);
 
 		$data = array_merge(
-					$data,
-					$this->fetch_fields_using_getters( $object, $context, $fields )
-				);
+			$data,
+			$this->fetch_fields_using_getters( $object, $context, $fields )
+		);
 
 		// Add variations to variable products.
-		if ( $object->is_type( 'variable' ) && in_array( 'variations', $fields ) ) {
+		if ( $object->is_type( 'variable' ) && in_array( 'variations', $fields, true ) ) {
 			$data['variations'] = $object->get_children();
 		}
 
 		// Add grouped products data.
-		if ( $object->is_type( 'grouped' ) && in_array( 'grouped_products', $fields ) ) {
+		if ( $object->is_type( 'grouped' ) && in_array( 'grouped_products', $fields, true ) ) {
 			$data['grouped_products'] = $object->get_children();
 		}
 

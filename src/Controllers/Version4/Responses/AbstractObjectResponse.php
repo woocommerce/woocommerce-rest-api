@@ -19,7 +19,7 @@ abstract class AbstractObjectResponse {
 	/**
 	 * Convert object to match data in the schema.
 	 *
-	 * @param mixed $object Object.
+	 * @param mixed  $object Object.
 	 * @param string $context Request context. Options: 'view' and 'edit'.
 	 * @return array
 	 */
