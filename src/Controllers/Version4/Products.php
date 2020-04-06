@@ -810,9 +810,18 @@ class Products extends AbstractObjectsController {
 	}
 
 	/**
+	 * Return true because Product factory can convert post object to product.
+	 *
+	 * @return bool
+	 */
+	protected function support_eager_loading() {
+		return apply_filters( 'woocommerce_rest_product_eager_loading', true );
+	}
+
+	/**
 	 * Get object.
 	 *
-	 * @param int $id Object ID.
+	 * @param int|\WP_Post $id Object ID or post object.
 	 *
 	 * @since  3.0.0
 	 * @return \WC_Data|bool
@@ -830,8 +839,8 @@ class Products extends AbstractObjectsController {
 	 */
 	protected function get_data_for_response( $object, $request ) {
 		$formatter = new ProductResponse();
-
-		return $formatter->prepare_response( $object, $this->get_request_context( $request ) );
+		$fields = $this->get_fields_for_response( $request );
+		return $formatter->prepare_response( $object, $this->get_request_context( $request ), $fields );
 	}
 
 	/**

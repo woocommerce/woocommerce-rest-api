@@ -41,10 +41,19 @@ class Orders extends AbstractObjectsController {
 	protected $hierarchical = true;
 
 	/**
+	 * Return true because order factory can convert post object to order.
+	 *
+	 * @return bool
+	 */
+	protected function support_eager_loading() {
+		return apply_filters( 'woocommerce_rest_product_eager_loading', true );
+	}
+
+	/**
 	 * Get object. Return false if object is not of required type.
 	 *
 	 * @since  3.0.0
-	 * @param  int $id Object ID.
+	 * @param  int|\WP_Post $id Object ID or post object.
 	 * @return \WC_Data|bool
 	 */
 	protected function get_object( $id ) {
@@ -71,7 +80,8 @@ class Orders extends AbstractObjectsController {
 			$formatter->set_dp( $request['dp'] );
 		}
 
-		return $formatter->prepare_response( $object, $this->get_request_context( $request ) );
+		$fields = $this->get_fields_for_response( $request );
+		return $formatter->prepare_response( $object, $this->get_request_context( $request ), $fields );
 	}
 
 	/**

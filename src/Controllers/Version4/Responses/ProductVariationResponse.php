@@ -19,9 +19,10 @@ class ProductVariationResponse extends ProductResponse {
 	 *
 	 * @param \WC_Product_Variation $object Variation data.
 	 * @param string                $context Request context. Options: 'view' and 'edit'.
+	 * @param array                 $fields  List of fields to return.
 	 * @return array
 	 */
-	public function prepare_response( $object, $context ) {
+	public function prepare_response( $object, $context, $fields = array() ) {
 		$data = array(
 			'id'                    => $object->get_id(),
 			'name'                  => $object->get_name( $context ),

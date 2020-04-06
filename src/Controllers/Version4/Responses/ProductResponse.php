@@ -15,13 +15,62 @@ defined( 'ABSPATH' ) || exit;
 class ProductResponse extends AbstractObjectResponse {
 
 	/**
+	 * Get related product IDs.
+	 *
+	 * @param \WC_Product $product Product object.
+	 * @param string      $context Context for request. Can be 'view' or 'edit'.
+	 *
+	 * @return int[]  List of related product IDs.
+	 */
+	public function get_related_ids( $product, $context ) {
+		return wp_parse_id_list( wc_get_related_products( $product->get_id() ) );
+	}
+
+	/**
+	 * Get product images.
+	 *
+	 * @param \WC_Product $product Product object.
+	 * @param string      $context Context for request. Can be 'view' or 'edit'.
+	 *
+	 * @return array List of images.
+	 */
+	public function get_images( $product, $context ) {
+		return $this->prepare_images( $product );
+	}
+
+	/**
+	 * Get product attributes.
+	 *
+	 * @param \WC_Product $product Product object.
+	 * @param string      $context Context for request. Can be 'view' or 'edit'.
+	 *
+	 * @return array Product attributes.
+	 */
+	public function get_attributes( $product, $context ) {
+		return $this->prepare_attributes( $product );
+	}
+
+	/**
+	 * Get meta data.
+	 *
+	 * @param \WC_Product $product Product object.
+	 * @param string      $context Context for request. Can be 'view' or 'edit'.
+	 *
+	 * @return mixed Product meta data.
+	 */
+	public function get_meta_data( $product, $context ) {
+		return $product->get_meta_data();
+	}
+
+	/**
 	 * Convert object to match data in the schema.
 	 *
-	 * @param \WC_Product_Simple|\WC_Product_Grouped|\WC_Product_Variable|\WC_Product_External $object Product data.
+	 * @param \WC_Product_Simple|\WC_Product_Grouped|\WC_Product_Variable|\WC_Product_External $object  Product data.
 	 * @param string                                                                           $context Request context. Options: 'view' and 'edit'.
+	 * @param array                                                                            $fields  List of fields to return.
 	 * @return array
 	 */
-	public function prepare_response( $object, $context ) {
+	public function prepare_response( $object, $context, $fields = array() ) {
 		$data = array(
 			'id'                    => $object->get_id(),
 			'name'                  => $object->get_name( $context ),
@@ -78,29 +127,30 @@ class ProductResponse extends AbstractObjectResponse {
 			'reviews_allowed'       => $object->get_reviews_allowed( $context ),
 			'average_rating'        => $object->get_average_rating( $context ),
 			'rating_count'          => $object->get_rating_count(),
-			'related_ids'           => wp_parse_id_list( wc_get_related_products( $object->get_id() ) ),
 			'upsell_ids'            => wp_parse_id_list( $object->get_upsell_ids( $context ) ),
 			'cross_sell_ids'        => wp_parse_id_list( $object->get_cross_sell_ids( $context ) ),
 			'parent_id'             => $object->get_parent_id( $context ),
 			'purchase_note'         => $object->get_purchase_note( $context ),
 			'categories'            => $this->prepare_taxonomy_terms( $object ),
 			'tags'                  => $this->prepare_taxonomy_terms( $object, 'tag' ),
-			'images'                => $this->prepare_images( $object ),
-			'attributes'            => $this->prepare_attributes( $object ),
 			'default_attributes'    => $this->prepare_default_attributes( $object ),
 			'variations'            => array(),
 			'grouped_products'      => array(),
 			'menu_order'            => $object->get_menu_order( $context ),
-			'meta_data'             => $object->get_meta_data(),
+		);
+
+		$data = array_merge(
+			$data,
+			$this->fetch_fields_using_getters( $object, $context, $fields )
 		);
 
 		// Add variations to variable products.
-		if ( $object->is_type( 'variable' ) ) {
+		if ( $object->is_type( 'variable' ) && in_array( 'variations', $fields, true ) ) {
 			$data['variations'] = $object->get_children();
 		}
 
 		// Add grouped products data.
-		if ( $object->is_type( 'grouped' ) ) {
+		if ( $object->is_type( 'grouped' ) && in_array( 'grouped_products', $fields, true ) ) {
 			$data['grouped_products'] = $object->get_children();
 		}
 
