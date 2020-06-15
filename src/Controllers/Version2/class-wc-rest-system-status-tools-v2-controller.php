@@ -200,6 +200,15 @@ class WC_REST_System_Status_Tools_V2_Controller extends WC_REST_Controller {
 				),
 			),
 		);
+		if ( method_exists( 'WC_Install', 'verify_base_tables' ) ) {
+			$tools['verify_db_tables'] = array(
+				'name'   => __( 'Verify base database tables', 'woocommerce-rest-api' ),
+				'button' => __( 'Verify database', 'woocommerce-rest-api' ),
+				'desc'   => sprintf(
+					__( 'Verify if all base database tables are present.', 'woocommerce-rest-api' )
+				),
+			);
+		}
 
 		// Jetpack does the image resizing heavy lifting so you don't have to.
 		if ( ( class_exists( 'Jetpack' ) && Jetpack::is_module_active( 'photon' ) ) || ! apply_filters( 'woocommerce_background_image_regeneration', true ) ) {
@@ -459,7 +468,7 @@ class WC_REST_System_Status_Tools_V2_Controller extends WC_REST_Controller {
 						$wpdb->prepare(
 							"DELETE FROM {$wpdb->prefix}woocommerce_downloadable_product_permissions
 							WHERE ( downloads_remaining != '' AND downloads_remaining = 0 ) OR ( access_expires IS NOT NULL AND access_expires < %s )",
-							date( 'Y-m-d', current_time( 'timestamp' ) )
+							gmdate( 'Y-m-d', current_time( 'timestamp' ) )
 						)
 					)
 				);
@@ -536,6 +545,23 @@ class WC_REST_System_Status_Tools_V2_Controller extends WC_REST_Controller {
 				// This method will make sure the database updates are executed even if cron is disabled. Nothing will happen if the updates are already running.
 				do_action( 'wp_' . $blog_id . '_wc_updater_cron' );
 				$message = __( 'Database upgrade routine has been scheduled to run in the background.', 'woocommerce-rest-api' );
+				break;
+
+			case 'verify_db_tables':
+				if ( ! method_exists( 'WC_Install', 'verify_base_tables' ) ) {
+					$message = __( 'You need WooCommerce 4.2 or newer to run this tool.', 'woocommerce-rest-api' );
+					$ran = false;
+					break;
+				}
+				// Try to manually create table again.
+				$missing_tables = WC_Install::verify_base_tables( true, true );
+				if ( 0 === count( $missing_tables ) ) {
+					$message = __( 'Database verified successfully.', 'woocommerce-rest-api' );
+				} else {
+					$message = __( 'Verifying database... One or more tables are still missing: ', 'woocommerce-rest-api' );
+					$message .= implode( ', ', $missing_tables );
+					$ran = false;
+				}
 				break;
 
 			default:
