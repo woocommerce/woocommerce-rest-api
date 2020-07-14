@@ -289,6 +289,12 @@ class SystemStatus extends AbstractController {
 							'context'     => array( 'view' ),
 							'readonly'    => true,
 						),
+						'database_name'          => array(
+							'description' => __( 'Database name.', 'woocommerce-rest-api' ),
+							'type'        => 'string',
+							'context'     => array( 'view' ),
+							'readonly'    => true,
+						),
 						'database_prefix'        => array(
 							'description' => __( 'Database prefix.', 'woocommerce-rest-api' ),
 							'type'        => 'string',

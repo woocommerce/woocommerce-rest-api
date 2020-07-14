@@ -116,6 +116,7 @@ class DatabaseInformation {
 		// Return all database info. Described by JSON Schema.
 		return array(
 			'wc_database_version'    => get_option( 'woocommerce_db_version' ),
+			'database_name'          => defined( 'DB_NAME' ) ? DB_NAME : '',
 			'database_prefix'        => $wpdb->prefix,
 			'database_tables'        => $tables,
 			'database_size'          => $database_size,

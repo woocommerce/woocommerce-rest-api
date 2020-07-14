@@ -297,6 +297,12 @@ class WC_REST_System_Status_V2_Controller extends WC_REST_Controller {
 							'context'     => array( 'view' ),
 							'readonly'    => true,
 						),
+						'database_name'          => array(
+							'description' => __( 'Database prefix.', 'woocommerce-rest-api' ),
+							'type'        => 'string',
+							'context'     => array( 'view' ),
+							'readonly'    => true,
+						),
 						'database_prefix'        => array(
 							'description' => __( 'Database prefix.', 'woocommerce-rest-api' ),
 							'type'        => 'string',
@@ -854,6 +860,7 @@ class WC_REST_System_Status_V2_Controller extends WC_REST_Controller {
 		// Return all database info. Described by JSON Schema.
 		return array(
 			'wc_database_version'    => get_option( 'woocommerce_db_version' ),
+			'database_name'          => defined( 'DB_NAME' ) ? DB_NAME : '',
 			'database_prefix'        => $wpdb->prefix,
 			'maxmind_geoip_database' => '',
 			'database_tables'        => $tables,
