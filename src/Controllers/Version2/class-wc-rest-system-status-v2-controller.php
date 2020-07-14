@@ -298,7 +298,7 @@ class WC_REST_System_Status_V2_Controller extends WC_REST_Controller {
 							'readonly'    => true,
 						),
 						'database_name'          => array(
-							'description' => __( 'Database prefix.', 'woocommerce-rest-api' ),
+							'description' => __( 'Database name.', 'woocommerce-rest-api' ),
 							'type'        => 'string',
 							'context'     => array( 'view' ),
 							'readonly'    => true,
