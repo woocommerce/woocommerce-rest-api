@@ -1,14 +1,17 @@
-WooCommerce REST API
+(Deprecated) WooCommerce REST API
 ===
+
+##### Notice: This plugin is now merged into WooCommerce  core, all open issues and PRs will be eventually transfered to [WooCommerce core](https://github.com/woocommerce/woocommerce) Repo. Please submit all new issues or PRs directly to the core repo.
+
 
 <a href="https://packagist.org/packages/woocommerce/woocommerce-rest-api"><img src="https://poser.pugx.org/woocommerce/woocommerce-rest-api/license" alt="license"></a> 
 <a href="https://packagist.org/packages/woocommerce/woocommerce-rest-api"><img src="https://poser.pugx.org/woocommerce/woocommerce-rest-api/v/stable" alt="Latest Stable Version"></a>
 <a href="https://travis-ci.org/woocommerce/woocommerce-rest-api/"><img src="https://travis-ci.org/woocommerce/woocommerce-rest-api.svg?branch=master" alt="Build Status"></a>
 <a href="https://scrutinizer-ci.com/g/woocommerce/woocommerce-rest-api/?branch=master"><img src="https://scrutinizer-ci.com/g/woocommerce/woocommerce-rest-api/badges/quality-score.png?b=master" alt="Scrutinizer Code Quality"></a>
 
-This repository is home to the WooCommerce REST API package. 
+This repository is home to the WooCommerce REST API package.
 
-The stable version of this package is bundled with [WooCommerce core](https://github.com/woocommerce/woocommerce)  releases, but it can also be used as a standalone plugin so bleeding-edge API features can be tested or used by other feature plugins.
+The stable version of this package is bundled with [WooCommerce core](https://github.com/woocommerce/woocommerce)  releases, but it can also be used as a standalone plugin so bleeding-edge API features can be tested or used by other feature plugins. We do not recommend using this repo as a standalone plugin in production.
 
 ## Using this package as a plugin
 
