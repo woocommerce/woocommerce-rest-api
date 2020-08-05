@@ -797,7 +797,7 @@ class WC_REST_Product_Variations_V2_Controller extends WC_REST_Products_V2_Contr
 				),
 				'manage_stock'          => array(
 					'description' => __( 'Stock management at variation level.', 'woocommerce-rest-api' ),
-					'type'        => 'mixed',
+					'type'        => array( 'boolean', 'null' ),
 					'default'     => false,
 					'context'     => array( 'view', 'edit' ),
 				),
@@ -980,7 +980,7 @@ class WC_REST_Product_Variations_V2_Controller extends WC_REST_Products_V2_Contr
 							),
 							'value' => array(
 								'description' => __( 'Meta value.', 'woocommerce-rest-api' ),
-								'type'        => 'mixed',
+								'type'        => array( 'string', 'null' ),
 								'context'     => array( 'view', 'edit' ),
 							),
 						),
