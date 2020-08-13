@@ -10,6 +10,7 @@
  * Class WC_Tests_API_Orders
  */
 class WC_Tests_API_Orders extends WC_REST_Unit_Test_Case {
+	use WC_REST_API_Complex_Meta;
 
 	/**
 	 * Array of order to track
@@ -59,7 +60,6 @@ class WC_Tests_API_Orders extends WC_REST_Unit_Test_Case {
 		$this->assertEquals( 200, $response->get_status() );
 		$this->assertEquals( 10, count( $orders ) );
 	}
-
 	/**
 	 * Tests to make sure orders cannot be viewed without valid permissions.
 	 *
@@ -181,6 +181,20 @@ class WC_Tests_API_Orders extends WC_REST_Unit_Test_Case {
 						'method_title' => 'Flat rate',
 						'total'        => '10.00',
 						'instance_id'  => '1',
+						'meta_data'    => array(
+							array(
+								'key'   => 'string',
+								'value' => 'string_val',
+							),
+							array(
+								'key'   => 'integer',
+								'value' => 1,
+							),
+							array(
+								'key'   => 'array',
+								'value' => array( 1, 2 ),
+							),
+						),
 					),
 				),
 			)
