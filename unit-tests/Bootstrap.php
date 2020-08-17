@@ -128,6 +128,9 @@ class Bootstrap {
 		require_once $this->tests_dir . '/Helpers/SettingsHelper.php';
 		require_once $this->tests_dir . '/Helpers/QueueHelper.php';
 		require_once $this->tests_dir . '/AbstractRestApiTest.php';
+
+		// Traits.
+		require_once $this->tests_dir . '/traits/trait-wc-rest-api-complex-meta.php';
 	}
 }
 
