@@ -165,6 +165,9 @@ class Customers extends AbstractController {
 		if ( ! empty( $request['email'] ) ) {
 			$prepared_args['search']         = $request['email'];
 			$prepared_args['search_columns'] = array( 'user_email' );
+		} else if ( ! empty( $request['username'] ) ) {
+			$prepared_args['search']         = $request['username'];
+			$prepared_args['search_columns'] = array( 'username' );
 		}
 
 		// Filter by role.
