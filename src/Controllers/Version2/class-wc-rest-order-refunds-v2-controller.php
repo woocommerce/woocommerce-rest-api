@@ -284,7 +284,7 @@ class WC_REST_Order_Refunds_V2_Controller extends WC_REST_Orders_V2_Controller {
 				'amount'         => $request['amount'],
 				'reason'         => empty( $request['reason'] ) ? null : $request['reason'],
 				'refund_payment' => is_bool( $request['api_refund'] ) ? $request['api_refund'] : true,
-				'restock_items'  => true,
+				'restock_items'  => is_bool( $request['restock_items'] ) ? $request['restock_items'] : true,
 			)
 		);
 
